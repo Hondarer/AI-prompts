@@ -19,6 +19,26 @@ AI アシスタント用のプロンプトテンプレートと設定ファイ�
 
 このリポジトリの設定ファイルは Claude Code と Continue の両方で一貫したルールセットを維持しています。新しい設定を追加する際は、両方のファイル間で整合性を保ってください。
 
+## 同期スクリプト
+
+### sync-rules.ps1
+
+Continue の `config.yaml` の rules セクションを Claude Code の `CLAUDE.md` の `## important_rules` セクションに同期する PowerShell スクリプトです。
+
+**使用方法：**
+
+```powershell
+.\sync-rules.ps1
+```
+
+**機能：**
+
+- `.continue/config.yaml` の rules セクションを抽出
+- YAML の複数行記法 (`>-`) を Markdown 形式に変換
+- `**タイトル**` 形式を `### タイトル` の見出しに変換
+- `.claude/CLAUDE.md` の `## important_rules` セクションを置換
+- UTF-8 (BOM なし) で保存
+
 ## TIPS
 
 ### グローバル設定ファイルの場所

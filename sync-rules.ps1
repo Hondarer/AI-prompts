@@ -34,18 +34,12 @@ param(
 # UTF-8 (BOM なし) エンコーディングを設定
 $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $false
 
-function Write-Message {
-    param(
-        [string]$Message
-    )
-    Write-Host $Message
-}
 
 function Test-FileExists {
     param([string]$FilePath)
     
     if (-not (Test-Path $FilePath)) {
-        Write-Message "Error: File not found: $FilePath"
+        Write-Host "Error: File not found: $FilePath"
         return $false
     }
     return $true
@@ -177,7 +171,7 @@ function Extract-RulesFromContinueConfig {
         }
     }
     catch {
-        Write-Message "Error: Failed to parse config.yaml: $($_.Exception.Message)"
+        Write-Host "Error: Failed to parse config.yaml: $($_.Exception.Message)"
         return $null
     }
 }
@@ -202,21 +196,21 @@ function Update-ClaudeConfig {
             [System.IO.File]::WriteAllText($ConfigPath, $newContent, $Utf8NoBomEncoding)
             return $true
         } else {
-            Write-Message "Error: ## important_rules section not found"
+            Write-Host "Error: ## important_rules section not found"
             return $false
         }
     }
     catch {
-        Write-Message "Error: Failed to update CLAUDE.md: $($_.Exception.Message)"
+        Write-Host "Error: Failed to update CLAUDE.md: $($_.Exception.Message)"
         return $false
     }
 }
 
 # メイン処理
-Write-Message "=== Continue Config Rules Sync Tool ==="
-Write-Message "Continue Config: $ContinueConfigPath"
-Write-Message "Claude Config: $ClaudeConfigPath"
-Write-Message ""
+Write-Host "=== Continue Config Rules Sync Script ==="
+Write-Host "Continue Config: $ContinueConfigPath"
+Write-Host "Claude Config: $ClaudeConfigPath"
+Write-Host ""
 
 # ファイル存在確認
 if (-not (Test-FileExists $ContinueConfigPath) -or -not (Test-FileExists $ClaudeConfigPath)) {
@@ -224,15 +218,15 @@ if (-not (Test-FileExists $ContinueConfigPath) -or -not (Test-FileExists $Claude
 }
 
 # rules セクションを抽出
-Write-Message "Extracting rules section from Continue Config..."
+Write-Host "Extracting rules section from Continue Config..."
 $rulesContent = Extract-RulesFromContinueConfig $ContinueConfigPath
 
 if ($null -eq $rulesContent) {
-    Write-Message "Process aborted"
+    Write-Host "Process aborted"
     exit 1
 }
 
-Write-Message "Extraction completed ($($rulesContent.Split("`n").Count) lines)"
+Write-Host "Extraction completed ($($rulesContent.Split("`n").Count) lines)"
 
 # デバッグファイルのクリーンアップ
 $debugFiles = @("debug-extracted-rules.txt", "debug-raw-rules.txt")
@@ -243,15 +237,15 @@ foreach ($file in $debugFiles) {
 }
 
 # Claude Config を更新
-Write-Message "Updating ## important_rules section in Claude Config..."
+Write-Host "Updating ## important_rules section in Claude Config..."
 $success = Update-ClaudeConfig $ClaudeConfigPath $rulesContent
 
 if ($success) {
-    Write-Message "Sync completed successfully"
-    Write-Message ""
-    Write-Message "Updated file:"
-    Write-Message "  $ClaudeConfigPath"
+    Write-Host "Sync completed successfully" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Updated file:"
+    Write-Host "  $ClaudeConfigPath"
 } else {
-    Write-Message "Sync failed"
+    Write-Host "Sync failed" -ForegroundColor Yellow
     exit 1
 }

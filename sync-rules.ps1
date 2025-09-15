@@ -117,12 +117,25 @@ function Convert-MultilineBlockToMarkdown {
                 $result += $remainingText.Trim()
             }
         } else {
-            # 通常の内容 - サブ見出し以降はさらに2文字分のインデントを削除
-            if ($foundTitle -and $line -match '^  (.*)$') {
-                $result += $matches[1]
+            # 通常の内容処理
+            $processedLine = $line
+            
+            # Markdown 見出しを 2 段階下げる（先頭の空白を含めてチェック）
+            if ($line -match '^\s*(#{1,4})\s+(.*)$') {
+                $hashCount = $matches[1].Length
+                $titleText = $matches[2]
+                $newHashCount = $hashCount + 2
+                $processedLine = "#" * $newHashCount + " " + $titleText
             } else {
-                $result += $line
+                # 見出し以外の行：先頭の空白を削除
+                if ($line -match '^  (.*)$') {
+                    $processedLine = $matches[1]
+                } else {
+                    $processedLine = $line
+                }
             }
+            
+            $result += $processedLine
         }
     }
     

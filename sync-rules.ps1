@@ -47,99 +47,129 @@ function Test-FileExists {
 
 function Convert-YamlToMarkdown {
     param([string[]]$Lines)
-    
+
     $result = @()
-    
-    for ($i = 0; $i -lt $Lines.Count; $i++) {
+    $i = 0
+
+    while ($i -lt $Lines.Count) {
         $line = $Lines[$i]
-        
-        if ($line -eq '- >-') {
-            # 複数行ブロック開始 - 内容を収集
-            $blockLines = @()
-            $i++ # >- の次の行から開始
-            
-            # ブロック内容を収集
-            while ($i -lt $Lines.Count -and -not ($Lines[$i] -match '^- ')) {
-                $blockLines += $Lines[$i]
+
+        # 構造化されたルールエントリの開始を検出
+        if ($line -match '^- name: (.+)$') {
+            $ruleName = $matches[1]
+            $i++
+
+            # description と rule を抽出
+            $description = ""
+            $ruleContent = ""
+
+            # description を取得
+            if ($i -lt $Lines.Count -and $Lines[$i] -match '^\s+description: (.+)$') {
+                $description = $matches[1]
                 $i++
             }
-            
-            # ブロック内容をMarkdownに変換
-            if ($blockLines.Count -gt 0) {
-                $markdownBlock = Convert-MultilineBlockToMarkdown $blockLines
-                $result += $markdownBlock
+
+            # rule: >- の部分を処理
+            if ($i -lt $Lines.Count -and $Lines[$i] -match '^\s+rule: >-$') {
+                $i++ # rule: >- の次の行から開始
+
+                # rule の内容を収集
+                $ruleLines = @()
+                $baseIndent = $null
+
+                while ($i -lt $Lines.Count) {
+                    $line = $Lines[$i]
+
+                    # 空行はそのまま追加
+                    if ($line.Trim() -eq '') {
+                        $ruleLines += ''
+                        $i++
+                        continue
+                    }
+
+                    # rule内容のインデントレベルを確認
+                    if ($line -match '^(\s+)(.*)$') {
+                        $indent = $matches[1]
+                        $content = $matches[2]
+
+                        # 基準インデントを設定（最初の非空行から）
+                        if ($null -eq $baseIndent) {
+                            $baseIndent = $indent
+                        }
+
+                        # 基準インデント以上の場合はrule内容として処理
+                        if ($indent.Length -ge $baseIndent.Length -and $line.StartsWith($baseIndent)) {
+                            # 基準インデントを削除
+                            $processedLine = $line.Substring($baseIndent.Length)
+                            $ruleLines += $processedLine
+                            $i++
+                        } else {
+                            # インデントが基準より少ない場合は終了
+                            break
+                        }
+                    } else {
+                        # インデントがない行は終了
+                        break
+                    }
+                }
+
+                # rule内容をMarkdownに変換
+                if ($ruleLines.Count -gt 0) {
+                    $ruleContent = Convert-RuleContentToMarkdown $ruleLines
+                }
             }
-            
-            # $i は次の '- ' 行を指しているので、1つ戻す
-            $i--
-        }
-        elseif ($line -match '^- ') {
-            # 通常のリスト項目
-            $result += $line
+
+            # Markdownとして結合
+            if ($ruleContent -ne "") {
+                $result += $ruleContent
+            }
+
+            # $i は既に次の行を指しているので、そのまま継続
+            continue
         }
         else {
             # その他の行（空行など）
             $result += $line
+            $i++
         }
     }
-    
+
     return $result
 }
 
-function Convert-MultilineBlockToMarkdown {
-    param([string[]]$BlockLines)
-    
-    if ($BlockLines.Count -eq 0) {
-        return @()
+function Convert-RuleContentToMarkdown {
+    param([string[]]$RuleLines)
+
+    if ($RuleLines.Count -eq 0) {
+        return ""
     }
-    
+
     $result = @()
-    $foundTitle = $false
-    
-    foreach ($line in $BlockLines) {
+
+    foreach ($line in $RuleLines) {
         if ($line.Trim() -eq '') {
             $result += ''
             continue
         }
-        
-        # 最初の **タイトル** を見つけてサブ見出しに変換
-        if (!$foundTitle -and $line -match '\*\*(.+?)\*\*') {
-            $title = $matches[1]
-            $foundTitle = $true
-            
-            # 前に空行を追加
-            $result += ''           # 前の空行
-            $result += "### $title" # サブ見出し
-            
-            # タイトル行の残りの部分があれば追加
-            $remainingText = $line -replace '\*\*(.+?)\*\*', ''
-            if ($remainingText.Trim() -ne '') {
-                $result += $remainingText.Trim()
-            }
+
+        # 通常の内容処理
+        $processedLine = $line
+
+        # Markdown 見出しを 2 段階下げる
+        if ($line -match '^\s*(#{1,4})\s+(.*)$') {
+            $hashCount = $matches[1].Length
+            $titleText = $matches[2]
+            $newHashCount = $hashCount + 2
+            $processedLine = "#" * $newHashCount + " " + $titleText
         } else {
-            # 通常の内容処理
+            # 見出し以外の行：そのまま使用（既にインデントは削除済み）
             $processedLine = $line
-            
-            # Markdown 見出しを 2 段階下げる（先頭の空白を含めてチェック）
-            if ($line -match '^\s*(#{1,4})\s+(.*)$') {
-                $hashCount = $matches[1].Length
-                $titleText = $matches[2]
-                $newHashCount = $hashCount + 2
-                $processedLine = "#" * $newHashCount + " " + $titleText
-            } else {
-                # 見出し以外の行：先頭の空白を削除
-                if ($line -match '^  (.*)$') {
-                    $processedLine = $matches[1]
-                } else {
-                    $processedLine = $line
-                }
-            }
-            
-            $result += $processedLine
         }
+
+        $result += $processedLine
     }
-    
-    return $result
+
+    return $result -join "`n"
 }
 
 function Extract-RulesFromContinueConfig {

@@ -162,8 +162,8 @@ sequenceDiagram
     Alice->>John: Hello John, how are you?
 ```
 
-指示があった場合は、draw.io でインポートして扱える xml の提示を行う。  
-draw.io でインポートして扱える xml は、Markdown を Agent モードで扱っている場合、`images` サブフォルダに配置する。
+指示があった場合は、draw.io で開くことができる xml (mxfile 形式: 拡張子 .drawio) の提示を行う。  
+.drawio は、Markdown を Agent モードで扱っている場合、`images` サブフォルダに配置する。
 
 ### PowerShell に関するルール
 

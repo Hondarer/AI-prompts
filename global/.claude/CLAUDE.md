@@ -162,7 +162,8 @@ sequenceDiagram
     Alice->>John: Hello John, how are you?
 ```
 
-指示があった場合は、draw.io にインポート可能な xml の提示を行う。
+指示があった場合は、draw.io で扱える svg (drawio.svg 形式) の提示を行う。  
+drawio.svg は、Markdown を Agent モードで扱っている場合、`images` サブフォルダに配置する。
 
 ### PowerShell に関するルール
 

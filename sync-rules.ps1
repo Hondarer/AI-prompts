@@ -6,6 +6,7 @@
 .DESCRIPTION
     .continue/config.yaml ファイルから rules セクションを抽出し、
     .claude/CLAUDE.md ファイルの ## important_rules セクションと置換します。
+    また、汎用的な LLM プロンプトとして markdown/markdown.md を生成します。
     UTF-8 (BOM なし) でファイルを保存します。
 
 .PARAMETER ContinueConfigPath
@@ -13,6 +14,15 @@
 
 .PARAMETER ClaudeConfigPath
     .claude/CLAUDE.md ファイルのパス (デフォルト: global/.claude/CLAUDE.md)
+
+.PARAMETER ClaudeHeaderPath
+    Claude ヘッダーテンプレートファイルのパス (デフォルト: claude-header.md)
+
+.PARAMETER MarkdownHeaderPath
+    markdown ヘッダーテンプレートファイルのパス (デフォルト: markdown-header.md)
+
+.PARAMETER MarkdownOutputPath
+    出力する markdown.md ファイルのパス (デフォルト: global/markdown/markdown.md)
 
 .EXAMPLE
     .\sync-rules.ps1
@@ -26,9 +36,18 @@
 param(
     [Parameter(Mandatory = $false)]
     [string]$ContinueConfigPath = "global\.continue\config.yaml",
-    
+
     [Parameter(Mandatory = $false)]
-    [string]$ClaudeConfigPath = "global\.claude\CLAUDE.md"
+    [string]$ClaudeConfigPath = "global\.claude\CLAUDE.md",
+
+    [Parameter(Mandatory = $false)]
+    [string]$ClaudeHeaderPath = "claude-header.md",
+
+    [Parameter(Mandatory = $false)]
+    [string]$MarkdownHeaderPath = "markdown-header.md",
+
+    [Parameter(Mandatory = $false)]
+    [string]$MarkdownOutputPath = "global\markdown\markdown.md"
 )
 
 # UTF-8 (BOM なし) エンコーディングを設定
@@ -222,29 +241,63 @@ function Extract-RulesFromContinueConfig {
 function Update-ClaudeConfig {
     param(
         [string]$ConfigPath,
+        [string]$HeaderPath,
         [string]$NewRulesContent
     )
-    
+
     try {
-        $content = Get-Content $ConfigPath -Raw -Encoding UTF8
-        
-        # ## important_rules セクションの開始位置を見つける
-        if ($content -match '(?sm)^## important_rules\r?\n') {
-            # 常に1つの空行を追加
-            $replacement = "## important_rules`n`n$NewRulesContent`n"
-            
-            $newContent = $content -replace '(?sm)^(## important_rules\r?\n).*?(?=^## (?!#)|\z)', $replacement
-            
-            # UTF-8 (BOM なし) で保存
-            [System.IO.File]::WriteAllText($ConfigPath, $newContent, $Utf8NoBomEncoding)
-            return $true
-        } else {
-            Write-Host "Error: ## important_rules section not found"
+        # ヘッダーファイルを読み込む
+        if (-not (Test-Path $HeaderPath)) {
+            Write-Host "Error: Header file not found: $HeaderPath"
             return $false
         }
+
+        $headerContent = Get-Content $HeaderPath -Raw -Encoding UTF8
+
+        # ヘッダー + "## important_rules" + ルールを結合
+        $claudeContent = $headerContent.TrimEnd() + "`n`n## important_rules`n`n" + $NewRulesContent + "`n"
+
+        # UTF-8 (BOM なし) で保存
+        [System.IO.File]::WriteAllText($ConfigPath, $claudeContent, $Utf8NoBomEncoding)
+        return $true
     }
     catch {
         Write-Host "Error: Failed to update CLAUDE.md: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+function Create-MarkdownPrompt {
+    param(
+        [string]$HeaderPath,
+        [string]$RulesContent,
+        [string]$OutputPath
+    )
+
+    try {
+        # ヘッダーファイルを読み込む
+        if (-not (Test-Path $HeaderPath)) {
+            Write-Host "Error: Header file not found: $HeaderPath"
+            return $false
+        }
+
+        $headerContent = Get-Content $HeaderPath -Raw -Encoding UTF8
+
+        # ヘッダー + "## important_rules" + ルールを結合
+        $markdownContent = $headerContent.TrimEnd() + "`n`n## important_rules`n`n" + $RulesContent + "`n"
+
+        # 出力ディレクトリを作成
+        $outputDir = Split-Path $OutputPath -Parent
+        if (-not (Test-Path $outputDir)) {
+            New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+        }
+
+        # UTF-8 (BOM なし) で保存
+        [System.IO.File]::WriteAllText($OutputPath, $markdownContent, $Utf8NoBomEncoding)
+        return $true
+    }
+    catch {
+        Write-Host "Error: Failed to create markdown.md: $($_.Exception.Message)"
         return $false
     }
 }
@@ -253,10 +306,13 @@ function Update-ClaudeConfig {
 Write-Host "=== Continue Config Rules Sync Script ==="
 Write-Host "Continue Config: $ContinueConfigPath"
 Write-Host "Claude Config: $ClaudeConfigPath"
+Write-Host "Claude Header: $ClaudeHeaderPath"
+Write-Host "Markdown Header: $MarkdownHeaderPath"
+Write-Host "Markdown Output: $MarkdownOutputPath"
 Write-Host ""
 
 # ファイル存在確認
-if (-not (Test-FileExists $ContinueConfigPath) -or -not (Test-FileExists $ClaudeConfigPath)) {
+if (-not (Test-FileExists $ContinueConfigPath) -or -not (Test-FileExists $ClaudeHeaderPath)) {
     exit 1
 }
 
@@ -280,14 +336,33 @@ foreach ($file in $debugFiles) {
 }
 
 # Claude Config を更新
-Write-Host "Updating ## important_rules section in Claude Config..."
-$success = Update-ClaudeConfig $ClaudeConfigPath $rulesContent
+Write-Host "Updating Claude Config with header and rules..."
+$claudeSuccess = Update-ClaudeConfig $ClaudeConfigPath $ClaudeHeaderPath $rulesContent
 
-if ($success) {
+# Markdown プロンプトを生成
+Write-Host "Creating generic LLM prompt (markdown.md)..."
+$markdownSuccess = Create-MarkdownPrompt $MarkdownHeaderPath $rulesContent $MarkdownOutputPath
+
+# 結果を表示
+Write-Host ""
+if ($claudeSuccess -and $markdownSuccess) {
     Write-Host "Sync completed successfully" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Updated files:"
+    Write-Host "  $ClaudeConfigPath"
+    Write-Host "  $MarkdownOutputPath"
+} elseif ($claudeSuccess) {
+    Write-Host "Claude Config updated, but markdown.md generation failed" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Updated file:"
     Write-Host "  $ClaudeConfigPath"
+    exit 1
+} elseif ($markdownSuccess) {
+    Write-Host "Markdown.md created, but Claude Config update failed" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Updated file:"
+    Write-Host "  $MarkdownOutputPath"
+    exit 1
 } else {
     Write-Host "Sync failed" -ForegroundColor Yellow
     exit 1

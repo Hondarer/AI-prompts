@@ -4,4 +4,4 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## リポジトリの詳細
 
-リポジトリの概要、構造、ルールについては [README.md](README.md) を参照してください。
+リポジトリの概要、構造、ルールについては @README.md を参照してください。

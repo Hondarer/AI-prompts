@@ -257,6 +257,12 @@ function Update-ClaudeConfig {
         # ヘッダー + "## important_rules" + ルールを結合
         $claudeContent = $headerContent.TrimEnd() + "`n`n## important_rules`n`n" + $NewRulesContent + "`n"
 
+        # 出力ディレクトリを作成
+        $outputDir = Split-Path $ConfigPath -Parent
+        if (-not (Test-Path $outputDir)) {
+            New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+        }
+
         # UTF-8 (BOM なし) で保存
         [System.IO.File]::WriteAllText($ConfigPath, $claudeContent, $Utf8NoBomEncoding)
         return $true

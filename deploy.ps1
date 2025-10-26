@@ -46,13 +46,13 @@ function Copy-ConfigFile {
     )
 
     if (-not (Test-Path -Path $SourcePath)) {
-        Write-Log "ソースファイルが見つかりません。スキップします: $SourcePath" "WARN"
+        Write-Log "ソースファイルが見つかりません。スキップします: $SourcePath" "INFO"
         return $null
     }
 
     # コピー先のファイルが存在しない場合はスキップ
     if (-not (Test-Path -Path $DestinationPath)) {
-        Write-Log "コピー先のファイルが存在しません。スキップします: $DestinationPath" "WARN"
+        Write-Log "コピー先のファイルが存在しません。スキップします: $DestinationPath" "INFO"
         return $null
     }
 
@@ -137,7 +137,7 @@ if ($ClaudeSuccess -eq $true) {
     $SuccessCount++
 }
 elseif ($ClaudeSuccess -eq $null) {
-    Write-Log "CLAUDE.md のデプロイをスキップしました" "WARN"
+    Write-Log "CLAUDE.md のデプロイをスキップしました" "INFO"
     $SkipCount++
 }
 else {
@@ -151,7 +151,7 @@ if ($ContinueSuccess -eq $true) {
     $SuccessCount++
 }
 elseif ($ContinueSuccess -eq $null) {
-    Write-Log "config.yaml のデプロイをスキップしました" "WARN"
+    Write-Log "config.yaml のデプロイをスキップしました" "INFO"
     $SkipCount++
 }
 else {
@@ -163,7 +163,7 @@ else {
 Write-Log "--- サマリ ---"
 Write-Log "成功: $SuccessCount 件" "INFO"
 if ($SkipCount -gt 0) {
-    Write-Log "スキップ: $SkipCount 件" "WARN"
+    Write-Log "スキップ: $SkipCount 件" "INFO"
 }
 if ($FailCount -gt 0) {
     Write-Log "失敗: $FailCount 件" "ERROR"

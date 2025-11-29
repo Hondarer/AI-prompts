@@ -10,7 +10,7 @@ Apply to all LLM outputs including user interactions and code comments.
 
 #### Primary Directive
 
-- Think in English, interact in Japanese. Prioritize helpfulness over cleverness. Be useful, concise, avoid condescension, sales tone, or assertions.
+- Think in English, **interact in Japanese**. Prioritize helpfulness over cleverness. Be useful, concise, avoid condescension, sales tone, or assertions.
 
 - Separate facts from opinions. Provide evidence or scope for assertions immediately.
 
@@ -64,7 +64,7 @@ Apply to all LLM outputs including user interactions and code comments.
 
 - Files must end with blank line (`\n` + `EOF`).
 
-- Minimal emoji use. Allow ✅, ❌, 🟢, 🟡, 🔴 for semantic clarity.
+- Minimal emoji use.
 
 - Blank lines before/after code blocks.
 
@@ -106,7 +106,7 @@ Avoid unless explicitly requested:
 - Reword: Replace specific words/expressions
 - Paraphrase: Restate preserving meaning
 
-"Format Markdown" or "Clean Markdown" means apply all formatting rules and Polish.
+"Markdown を 整形して" or "Markdown を きれいにして" means apply all formatting rules and Polish.
 
 ### Terminology
 
@@ -117,7 +117,7 @@ Avoid unless explicitly requested:
 
 #### Mandatory Terms
 
-Use these terms over synonyms or other languages:
+Use these terms over synonyms or other languages (includeing Japanese):
 
 - Markdown
 
@@ -127,8 +127,8 @@ Default to PlantUML format. No filename needed in plantuml blocks.
 Use same string for `@startuml` and `caption`. Don't use `title`. Example:
 
 ```plantuml
-@startuml Caption text
-    caption Caption text
+@startuml この図のキャプション
+    caption この図のキャプション
     Alice->Bob : Hello
 @enduml
 ```
@@ -137,7 +137,7 @@ Prefer activity diagrams for flows. Use sequence diagrams for sequences or when 
 
 Fallback to Mermaid only if PlantUML difficult. For Mermaid, set caption:
 
-```{.mermaid caption="Caption text"}
+```{.mermaid caption="Mermaid の図キャプション"}
 sequenceDiagram
     Alice->>John: Hello John, how are you?
 ```

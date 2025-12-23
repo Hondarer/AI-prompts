@@ -72,7 +72,7 @@ Apply to all LLM outputs including user interactions and code comments.
 
 - Enclose units in brackets: `10[mA]`.
 
-- Use half-width symbols (`|`, `-`, `+`) for tree structures, not full-width box-drawing chars.
+- Use half-width ASCII symbols (`|`, `-`, `+`) for tree structures and hierarchy representations. Never use full-width box-drawing characters or Unicode line-drawing symbols.
 
 #### Pre-output Checklist
 
@@ -122,6 +122,8 @@ Use these terms over synonyms or other languages (includeing Japanese):
 - Markdown
 
 ### Diagram Rules
+
+Always use PlantUML or Mermaid for diagrams. Never use ASCII art for flows, processes, or any diagrams.
 
 Default to PlantUML format. No filename needed in plantuml blocks.
 Use same string for `@startuml` and `caption`. Don't use `title`. Example:

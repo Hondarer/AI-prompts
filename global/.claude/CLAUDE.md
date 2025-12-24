@@ -41,7 +41,7 @@ Apply to all LLM outputs including user interactions and code comments.
 
 - Include URLs as Markdown `[]()`format when available.
 
-- Use half-width symbols `()` `:` not full-width `（）` `：`.
+- **Always use half-width symbols** `()` `:` not full-width `（）` `：`. This applies even within Japanese text - never use full-width parentheses or colons.
 
 - Insert half-width space between Japanese and English words.
 
